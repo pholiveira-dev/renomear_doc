@@ -168,6 +168,33 @@
         color: var(--warn);
       }
 
+      .file-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .remove-file-btn {
+        display: none;
+        background: #fee2e2;
+        color: #991b1b;
+        border: 1px solid #fecaca;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .remove-file-btn.show {
+        display: inline-block;
+      }
+
+      .remove-file-btn:hover {
+        background: #fecaca;
+      }
+
       .actions {
         display: flex;
         flex-wrap: wrap;
@@ -350,11 +377,7 @@
       const documents = [
         { id: "tce_fepecs", label: "TCE FEPECS", accepts: "*" },
         { id: "cadastro_sei", label: "CADASTRO SEI", accepts: "*" },
-        {
-          id: "tce_iges",
-          label: "TCE IGES",
-          accepts: "image/jpeg,image/jpg,.jpeg,.jpg",
-        },
+        { id: "tce_iges", label: "TCE IGES", accepts: "*" },
         {
           id: "foto_3x4",
           label: "FOTO 3x4",
@@ -365,7 +388,7 @@
         { id: "curso_iges", label: "CURSO IGES", accepts: "*" },
       ];
 
-      const imageAsJpgLabels = new Set(["FOTO 3x4", "TCE IGES"]);
+      const imageAsJpgLabels = new Set(["FOTO 3x4"]);
 
       const documentGrid = document.getElementById("documentGrid");
       const resultList = document.getElementById("resultList");
@@ -396,6 +419,9 @@
           </label>
           <input class="file-input" type="file" id="${doc.id}" ${doc.accepts !== "*" ? `accept="${doc.accepts}"` : ""} />
           <div class="file-status" id="status_${doc.id}">Nenhum arquivo selecionado.</div>
+          <div class="file-actions">
+            <button type="button" class="remove-file-btn" id="remove_${doc.id}">Excluir arquivo</button>
+          </div>
         `;
 
           documentGrid.appendChild(card);
@@ -403,14 +429,17 @@
           const input = card.querySelector(".file-input");
           const status = card.querySelector(".file-status");
           const dropzone = card.querySelector(".dropzone");
+          const removeBtn = card.querySelector(".remove-file-btn");
 
           function updateStatus(file) {
             if (file) {
               status.className = "file-status ok";
               status.textContent = `Arquivo selecionado: ${file.name}`;
+              removeBtn.classList.add("show");
             } else {
               status.className = "file-status warn";
               status.textContent = "Nenhum arquivo selecionado.";
+              removeBtn.classList.remove("show");
             }
           }
 
@@ -440,6 +469,11 @@
             transfer.items.add(files[0]);
             input.files = transfer.files;
             updateStatus(files[0]);
+          });
+
+          removeBtn.addEventListener("click", () => {
+            input.value = "";
+            updateStatus(null);
           });
         });
       }
@@ -549,10 +583,14 @@
         documents.forEach((doc) => {
           const input = document.getElementById(doc.id);
           const status = document.getElementById(`status_${doc.id}`);
+          const removeBtn = document.getElementById(`remove_${doc.id}`);
           if (input) input.value = "";
           if (status) {
             status.className = "file-status";
             status.textContent = "Nenhum arquivo selecionado.";
+          }
+          if (removeBtn) {
+            removeBtn.classList.remove("show");
           }
         });
       });
