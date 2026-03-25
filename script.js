@@ -170,7 +170,7 @@ async function fileToJpgIfNeeded(file, label) {
 async function buildProcessedEntry(file, studentName, label) {
   const finalFile = await fileToJpgIfNeeded(file, label);
   const finalExtension = getFinalExtension(finalFile, label);
-  const newName = `${studentName} - ${label}${finalExtension}`;
+  const newName = `${studentName}_${label}${finalExtension}`;
   const url = URL.createObjectURL(finalFile);
 
   const item = document.createElement("div");
