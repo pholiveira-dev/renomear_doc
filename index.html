@@ -4,14 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Renomeador de Documentos</title>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script
+      async
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7426723318273038"
+      crossorigin="anonymous"
+    ></script>
+
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <script
-    async
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7426723318273038"
-    crossorigin="anonymous"
-  ></script>
+
   <body data-theme="dark">
     <div class="orb"></div>
     <div class="orb-2"></div>
@@ -42,9 +47,10 @@
 
       <div class="panel-row">
         <section class="student-box">
-          <label class="main-label" for="studentName"
-            >Nome completo do aluno</label
-          >
+          <label class="main-label" for="studentName">
+            Nome completo do aluno
+          </label>
+
           <div class="input-shell">
             <input
               type="text"
@@ -59,10 +65,12 @@
             <span>Documentos disponíveis</span>
             <strong id="docCount">7</strong>
           </div>
+
           <div class="stat">
             <span>Selecionados agora</span>
             <strong id="selectedCount">0</strong>
           </div>
+
           <div class="stat">
             <span>Saída prioritária</span>
             <strong>ZIP</strong>
@@ -77,11 +85,14 @@
           Arraste os arquivos para os cards ou clique em cada área para
           selecionar manualmente.
         </div>
+
         <div class="action-buttons">
-          <button class="primary" id="processBtn">
+          <button class="primary" id="processBtn" type="button">
             Gerar nomes e preparar downloads
           </button>
-          <button class="secondary" id="clearBtn">Limpar tudo</button>
+          <button class="secondary" id="clearBtn" type="button">
+            Limpar tudo
+          </button>
         </div>
       </section>
 
@@ -94,14 +105,102 @@
               para download com o novo nome.
             </p>
           </div>
+
           <div id="zipArea"></div>
         </div>
+
         <div class="result-list" id="resultList">
           <div class="empty">Nenhum arquivo processado ainda.</div>
         </div>
       </section>
     </div>
 
-    <script src="script.js"></script>
+    <div class="modal-backdrop hidden" id="conversionModalBackdrop">
+      <div
+        class="modal-shell"
+        id="conversionModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="conversionModalTitle"
+      >
+        <button
+          class="modal-close"
+          id="modalCloseBtn"
+          type="button"
+          aria-label="Fechar modal"
+        >
+          ×
+        </button>
+
+        <div class="modal-icon-wrap">
+          <div class="modal-icon">⇄</div>
+        </div>
+
+        <div class="modal-content">
+          <span class="modal-kicker">Conversão de arquivo</span>
+          <h3 id="conversionModalTitle">Confirmar conversão</h3>
+
+          <p class="modal-description" id="conversionModalDescription">
+            Revise os dados abaixo antes de continuar.
+          </p>
+
+          <div class="modal-info-grid">
+            <div class="modal-info-card">
+              <span>Documento</span>
+              <strong id="modalDocLabel">—</strong>
+            </div>
+
+            <div class="modal-info-card">
+              <span>Arquivo atual</span>
+              <strong id="modalFileName">—</strong>
+            </div>
+
+            <div class="modal-info-card">
+              <span>Formato atual</span>
+              <strong id="modalCurrentExt">—</strong>
+            </div>
+
+            <div class="modal-info-card">
+              <span>Formato de destino</span>
+              <strong id="modalTargetExt">—</strong>
+            </div>
+          </div>
+
+          <div class="modal-warning" id="modalWarningText">
+            Deseja mesmo converter este arquivo?
+          </div>
+
+          <div class="modal-actions">
+            <button
+              class="secondary modal-secondary"
+              id="modalCancelBtn"
+              type="button"
+            >
+              Cancelar
+            </button>
+
+            <button
+              class="primary modal-primary"
+              id="modalConfirmBtn"
+              type="button"
+            >
+              Sim, converter
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="loading-overlay hidden" id="loadingOverlay">
+      <div class="loading-card">
+        <div class="loading-spinner"></div>
+        <h3 id="loadingTitle">Processando arquivo</h3>
+        <p id="loadingText">Aguarde enquanto preparamos tudo para você.</p>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toastStack"></div>
+
+    <script type="module" src="script.js"></script>
   </body>
 </html>

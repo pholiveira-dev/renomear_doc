@@ -1,0 +1,51 @@
+export const documents = [
+  {
+    id: "peticionamento_sei",
+    label: "PETICIONAMENTO SEI",
+    acceptedExtensions: ["pdf"],
+    targetExtension: "pdf",
+    convertibleFrom: ["jpg", "jpeg", "png"],
+  },
+  {
+    id: "tce_fepecs",
+    label: "TCE FEPECS",
+    acceptedExtensions: ["jpg", "jpeg"],
+    targetExtension: "jpg",
+    convertibleFrom: ["pdf", "png", "webp"],
+  },
+  {
+    id: "foto_3x4",
+    label: "FOTO 3x4",
+    acceptedExtensions: ["jpg", "jpeg"],
+    targetExtension: "jpg",
+    convertibleFrom: ["pdf", "png", "webp"],
+  },
+  {
+    id: "cartao_vacina",
+    label: "CARTÃO DE VACINA",
+    acceptedExtensions: ["pdf"],
+    targetExtension: "pdf",
+    convertibleFrom: ["jpg", "jpeg", "png"],
+  },
+  {
+    id: "tce_iges",
+    label: "TCE IGES",
+    acceptedExtensions: ["jpg", "jpeg"],
+    targetExtension: "jpg",
+    convertibleFrom: ["pdf", "png", "webp"],
+  },
+  {
+    id: "curso_fepecs",
+    label: "CURSO FEPECS",
+    acceptedExtensions: ["pdf"],
+    targetExtension: "pdf",
+    convertibleFrom: ["jpg", "jpeg", "png"],
+  },
+  {
+    id: "curso_iges",
+    label: "CURSO IGES",
+    acceptedExtensions: ["pdf"],
+    targetExtension: "pdf",
+    convertibleFrom: ["jpg", "jpeg", "png"],
+  },
+];
