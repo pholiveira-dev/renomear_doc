@@ -9,9 +9,9 @@ export const documents = [
   {
     id: "tce_fepecs",
     label: "TCE FEPECS",
-    acceptedExtensions: ["jpg", "jpeg"],
-    targetExtension: "jpg",
-    convertibleFrom: ["pdf", "png", "webp"],
+    acceptedExtensions: ["pdf"],
+    targetExtension: "pdf",
+    convertibleFrom: ["jpg", "jpeg", "png", "webp"],
   },
   {
     id: "foto_3x4",
@@ -30,9 +30,9 @@ export const documents = [
   {
     id: "tce_iges",
     label: "TCE IGES",
-    acceptedExtensions: ["jpg", "jpeg"],
-    targetExtension: "jpg",
-    convertibleFrom: ["pdf", "png", "webp"],
+    acceptedExtensions: ["pdf"],
+    targetExtension: "pdf",
+    convertibleFrom: ["jpg", "jpeg", "png", "webp"],
   },
   {
     id: "curso_fepecs",
