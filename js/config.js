@@ -93,33 +93,84 @@ function pixelÉBrancoOuFundo(r, g, b, a) {
   return pixelÉQuaseBranco(r, g, b, a);
 }
 
-function linhaBrancaRatio(imageData, y, step = 1) {
+function analisarLinha(imageData, y, step = 1) {
   const { width } = imageData;
   let whiteCount = 0;
   let total = 0;
+  let longestWhiteRun = 0;
+  let currentRun = 0;
 
   for (let x = 0; x < width; x += step) {
     const [r, g, b, a] = obterPixel(imageData, x, y);
-    if (pixelÉBrancoOuFundo(r, g, b, a)) whiteCount += 1;
+    const isWhite = pixelÉBrancoOuFundo(r, g, b, a);
+
+    if (isWhite) {
+      whiteCount += 1;
+      currentRun += 1;
+      longestWhiteRun = Math.max(longestWhiteRun, currentRun);
+    } else {
+      currentRun = 0;
+    }
+
     total += 1;
   }
 
-  return total === 0 ? 0 : whiteCount / total;
+  return {
+    whiteRatio: total === 0 ? 0 : whiteCount / total,
+    longestWhiteRun,
+    width: total,
+  };
 }
 
-function colunaBrancaRatio(imageData, x, top, bottom, step = 1) {
+function analisarColuna(imageData, x, top, bottom, step = 1) {
   const { height } = imageData;
+  const yStart = Math.max(0, top);
   const yEnd = Math.min(height - 1, bottom);
   let whiteCount = 0;
   let total = 0;
+  let longestWhiteRun = 0;
+  let currentRun = 0;
 
-  for (let y = Math.max(0, top); y <= yEnd; y += step) {
+  for (let y = yStart; y <= yEnd; y += step) {
     const [r, g, b, a] = obterPixel(imageData, x, y);
-    if (pixelÉBrancoOuFundo(r, g, b, a)) whiteCount += 1;
+    const isWhite = pixelÉBrancoOuFundo(r, g, b, a);
+
+    if (isWhite) {
+      whiteCount += 1;
+      currentRun += 1;
+      longestWhiteRun = Math.max(longestWhiteRun, currentRun);
+    } else {
+      currentRun = 0;
+    }
+
     total += 1;
   }
 
-  return total === 0 ? 0 : whiteCount / total;
+  return {
+    whiteRatio: total === 0 ? 0 : whiteCount / total,
+    longestWhiteRun,
+    height: total,
+  };
+}
+
+function ehBordaBrancaLateral(metrics) {
+  const { whiteRatio, longestWhiteRun, height } = metrics;
+  const contiguousRatio = height > 0 ? longestWhiteRun / height : 0;
+  return (
+    (whiteRatio >= 0.92 && contiguousRatio >= 0.82) ||
+    (whiteRatio >= 0.94 && contiguousRatio >= 0.75) ||
+    (whiteRatio >= 0.96 && contiguousRatio >= 0.65)
+  );
+}
+
+function ehBordaBrancaSuperiorInferior(metrics) {
+  const { whiteRatio, longestWhiteRun, width } = metrics;
+  const contiguousRatio = width > 0 ? longestWhiteRun / width : 0;
+  return (
+    (whiteRatio >= 0.93 && contiguousRatio >= 0.85) ||
+    (whiteRatio >= 0.95 && contiguousRatio >= 0.75) ||
+    (whiteRatio >= 0.97 && contiguousRatio >= 0.6)
+  );
 }
 
 function obterBordaBranca(canvas) {
@@ -132,28 +183,45 @@ function obterBordaBranca(canvas) {
   const height = canvas.height;
   const imageData = ctx.getImageData(0, 0, width, height);
 
-  const threshold = 0.85;
-  const minBorder = Math.max(4, Math.round(Math.min(width, height) * 0.0125));
+  const minBorder = Math.max(4, Math.round(Math.min(width, height) * 0.008));
+  const maxBorderDepth = Math.max(30, Math.round(Math.min(width, height) * 0.18));
 
   let top = 0;
-  while (top < height / 2 && linhaBrancaRatio(imageData, top) >= threshold) {
+  while (
+    top < height / 2 &&
+    top < maxBorderDepth &&
+    ehBordaBrancaSuperiorInferior(analisarLinha(imageData, top, 1))
+  ) {
     top += 1;
   }
 
   let bottom = 0;
-  while (bottom < height / 2 && linhaBrancaRatio(imageData, height - 1 - bottom) >= threshold) {
+  while (
+    bottom < height / 2 &&
+    bottom < maxBorderDepth &&
+    ehBordaBrancaSuperiorInferior(analisarLinha(imageData, height - 1 - bottom, 1))
+  ) {
     bottom += 1;
   }
 
-  let left = 0;
   const verticalStart = Math.max(top, Math.floor(height * 0.05));
   const verticalEnd = Math.min(height - 1 - bottom, Math.floor(height * 0.95));
-  while (left < width / 2 && colunaBrancaRatio(imageData, left, verticalStart, verticalEnd) >= threshold) {
+
+  let left = 0;
+  while (
+    left < width / 2 &&
+    left < maxBorderDepth &&
+    ehBordaBrancaLateral(analisarColuna(imageData, left, verticalStart, verticalEnd, 1))
+  ) {
     left += 1;
   }
 
   let right = 0;
-  while (right < width / 2 && colunaBrancaRatio(imageData, width - 1 - right, verticalStart, verticalEnd) >= threshold) {
+  while (
+    right < width / 2 &&
+    right < maxBorderDepth &&
+    ehBordaBrancaLateral(analisarColuna(imageData, width - 1 - right, verticalStart, verticalEnd, 1))
+  ) {
     right += 1;
   }
 

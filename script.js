@@ -24,7 +24,6 @@ const clearBtn = document.getElementById("clearBtn");
 const studentNameInput = document.getElementById("studentName");
 const selectedCount = document.getElementById("selectedCount");
 const docCount = document.getElementById("docCount");
-const themeToggle = document.getElementById("themeToggle");
 
 const documentState = createInitialState(documents);
 
@@ -39,21 +38,6 @@ function refreshSelectedCount() {
   selectedCount.textContent = total;
 }
 
-function applyTheme(theme) {
-  document.body.setAttribute("data-theme", theme);
-  localStorage.setItem("theme", theme);
-  themeToggle.textContent = theme === "dark" ? "Modo claro" : "Modo escuro";
-}
-
-function initTheme() {
-  const savedTheme = localStorage.getItem("theme");
-  const preferredDark = window.matchMedia(
-    "(prefers-color-scheme: dark)",
-  ).matches;
-
-  const theme = savedTheme || (preferredDark ? "dark" : "light");
-  applyTheme(theme);
-}
 
 function isImageLike(file) {
   return file && file.type && file.type.startsWith("image/");
@@ -261,8 +245,12 @@ function createDocumentCards() {
 
       <label class="dropzone premium-dropzone" for="${doc.id}" id="drop_${doc.id}">
         <div class="dropzone-inner">
-          <span class="dropzone-title">Adicionar documento</span>
-          <span class="dropzone-subtitle">Clique para selecionar ou arraste o arquivo aqui</span>
+          <span class="dropzone-title">${doc.id === "foto_3x4" ? "Enviar foto 3x4" : "Adicionar documento"}</span>
+          <span class="dropzone-subtitle">
+            ${doc.id === "foto_3x4"
+              ? "Arraste sua foto 3x4 aqui. O sistema detecta bordas brancas automaticamente."
+              : "Clique para selecionar ou arraste o arquivo aqui"}
+          </span>
         </div>
       </label>
 
@@ -664,11 +652,5 @@ clearBtn.addEventListener("click", () => {
   refreshSelectedCount();
 });
 
-themeToggle.addEventListener("click", () => {
-  const currentTheme = document.body.getAttribute("data-theme");
-  applyTheme(currentTheme === "dark" ? "light" : "dark");
-});
-
-initTheme();
 createDocumentCards();
 refreshSelectedCount();

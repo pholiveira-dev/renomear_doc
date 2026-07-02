@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="styles.css?v=2" />
   </head>
 
-  <body data-theme="dark">
+  <body data-theme="light">
     <div class="orb"></div>
     <div class="orb-2"></div>
 
@@ -36,9 +36,9 @@
             <p class="hero-description">
               Digite o nome completo do aluno, envie os documentos necessários e
               baixe tudo no padrão
-              <strong>NOME COMPLETO_TIPO DO DOCUMENTO</strong>. O sistema também
-              valida formatos e prepara os arquivos para download individual ou
-              em <strong>ZIP</strong>.
+              <strong>NOME COMPLETO_TIPO DO DOCUMENTO</strong>. O sistema
+              identifica automaticamente bordas brancas em fotos 3x4 e oferece a
+              remoção antes do download.
             </p>
 
             <div class="hero-stats">
@@ -65,9 +65,6 @@
             </div>
           </div>
 
-          <button class="theme-toggle" id="themeToggle" type="button">
-            Alternar tema
-          </button>
         </div>
       </section>
 
@@ -108,8 +105,9 @@
 
       <section class="actions">
         <div class="actions-copy">
-          Arraste os arquivos para os cards ou clique em cada área para
-          selecionar manualmente.
+          Arraste os arquivos para o card correspondente ou clique no campo
+          destacado para selecionar. A foto 3x4 receberá verificação automática
+          de bordas brancas.
         </div>
 
         <div class="action-buttons">
