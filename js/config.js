@@ -49,3 +49,215 @@ export const documents = [
     convertibleFrom: ["jpg", "jpeg", "png"],
   },
 ];
+
+function criarCanvas(width, height) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+}
+
+function carregarImagem(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      resolve(img);
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Não foi possível carregar a imagem."));
+    };
+
+    img.src = url;
+  });
+}
+
+function obterPixel(imageData, x, y) {
+  const { width, data } = imageData;
+  const offset = (y * width + x) * 4;
+  return [data[offset], data[offset + 1], data[offset + 2], data[offset + 3]];
+}
+
+function pixelÉQuaseBranco(r, g, b, a) {
+  if (a === 0) return false;
+  const minChannel = Math.min(r, g, b);
+  const maxChannel = Math.max(r, g, b);
+  return maxChannel >= 235 && minChannel >= 215 && maxChannel - minChannel <= 40;
+}
+
+function pixelÉBrancoOuFundo(r, g, b, a) {
+  return pixelÉQuaseBranco(r, g, b, a);
+}
+
+function linhaBrancaRatio(imageData, y, step = 1) {
+  const { width } = imageData;
+  let whiteCount = 0;
+  let total = 0;
+
+  for (let x = 0; x < width; x += step) {
+    const [r, g, b, a] = obterPixel(imageData, x, y);
+    if (pixelÉBrancoOuFundo(r, g, b, a)) whiteCount += 1;
+    total += 1;
+  }
+
+  return total === 0 ? 0 : whiteCount / total;
+}
+
+function colunaBrancaRatio(imageData, x, top, bottom, step = 1) {
+  const { height } = imageData;
+  const yEnd = Math.min(height - 1, bottom);
+  let whiteCount = 0;
+  let total = 0;
+
+  for (let y = Math.max(0, top); y <= yEnd; y += step) {
+    const [r, g, b, a] = obterPixel(imageData, x, y);
+    if (pixelÉBrancoOuFundo(r, g, b, a)) whiteCount += 1;
+    total += 1;
+  }
+
+  return total === 0 ? 0 : whiteCount / total;
+}
+
+function obterBordaBranca(canvas) {
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("O parâmetro deve ser um elemento HTMLCanvasElement.");
+  }
+
+  const ctx = canvas.getContext("2d");
+  const width = canvas.width;
+  const height = canvas.height;
+  const imageData = ctx.getImageData(0, 0, width, height);
+
+  const threshold = 0.85;
+  const minBorder = Math.max(4, Math.round(Math.min(width, height) * 0.0125));
+
+  let top = 0;
+  while (top < height / 2 && linhaBrancaRatio(imageData, top) >= threshold) {
+    top += 1;
+  }
+
+  let bottom = 0;
+  while (bottom < height / 2 && linhaBrancaRatio(imageData, height - 1 - bottom) >= threshold) {
+    bottom += 1;
+  }
+
+  let left = 0;
+  const verticalStart = Math.max(top, Math.floor(height * 0.05));
+  const verticalEnd = Math.min(height - 1 - bottom, Math.floor(height * 0.95));
+  while (left < width / 2 && colunaBrancaRatio(imageData, left, verticalStart, verticalEnd) >= threshold) {
+    left += 1;
+  }
+
+  let right = 0;
+  while (right < width / 2 && colunaBrancaRatio(imageData, width - 1 - right, verticalStart, verticalEnd) >= threshold) {
+    right += 1;
+  }
+
+  const requiresAdjustment =
+    width - left - right > 0 &&
+    height - top - bottom > 0 &&
+    (top >= minBorder || bottom >= minBorder || left >= minBorder || right >= minBorder);
+
+  return {
+    left,
+    top,
+    right,
+    bottom,
+    requiresAdjustment,
+  };
+}
+
+export async function processarFoto3x4(fileInput) {
+  const file = fileInput instanceof File ? fileInput : fileInput?.files?.[0] || null;
+
+  if (!file || !file.type.startsWith("image/")) {
+    throw new Error("É necessário fornecer um arquivo de imagem válido.");
+  }
+
+  const img = await carregarImagem(file);
+  const canvas = criarCanvas(img.naturalWidth, img.naturalHeight);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const border = obterBordaBranca(canvas);
+  return border.requiresAdjustment;
+}
+
+export function cortarBordas(canvasOriginal) {
+  if (!(canvasOriginal instanceof HTMLCanvasElement)) {
+    throw new Error("O parâmetro deve ser um elemento HTMLCanvasElement.");
+  }
+
+  let currentCanvas = canvasOriginal;
+
+  for (let iteration = 0; iteration < 3; iteration += 1) {
+    const border = obterBordaBranca(currentCanvas);
+    if (!border.requiresAdjustment) {
+      break;
+    }
+
+    const croppedWidth = currentCanvas.width - border.left - border.right;
+    const croppedHeight = currentCanvas.height - border.top - border.bottom;
+
+    if (croppedWidth <= 0 || croppedHeight <= 0) {
+      break;
+    }
+
+    const croppedCanvas = criarCanvas(croppedWidth, croppedHeight);
+    const croppedCtx = croppedCanvas.getContext("2d");
+    croppedCtx.drawImage(
+      currentCanvas,
+      border.left,
+      border.top,
+      croppedWidth,
+      croppedHeight,
+      0,
+      0,
+      croppedWidth,
+      croppedHeight,
+    );
+
+    currentCanvas = croppedCanvas;
+  }
+
+  return currentCanvas;
+}
+
+function canvasParaBlob(canvas, mimeType, quality = 0.92) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (!blob) {
+        reject(new Error("Falha ao gerar o arquivo de imagem."));
+        return;
+      }
+      resolve(blob);
+    }, mimeType, quality);
+  });
+}
+
+export async function recortarFoto3x4Arquivo(file, quality = 0.92) {
+  if (!(file instanceof File) || !file.type.startsWith("image/")) {
+    throw new Error("É necessário fornecer um arquivo de imagem de imagem para recorte.");
+  }
+
+  const img = await carregarImagem(file);
+  const canvas = criarCanvas(img.naturalWidth, img.naturalHeight);
+  const ctx = canvas.getContext("2d");
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+  const croppedCanvas = cortarBordas(canvas);
+  if (croppedCanvas.width === canvas.width && croppedCanvas.height === canvas.height) {
+    return file;
+  }
+
+  const blob = await canvasParaBlob(croppedCanvas, file.type, quality);
+  return new File([blob], file.name, {
+    type: file.type,
+    lastModified: Date.now(),
+  });
+}
+

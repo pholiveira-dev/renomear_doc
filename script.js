@@ -1,4 +1,4 @@
-import { documents } from "./js/config.js";
+import { documents, processarFoto3x4, recortarFoto3x4Arquivo } from "./js/config.js";
 import { createInitialState } from "./js/state.js";
 import { sanitizeName } from "./js/utils.js";
 import { validateFile } from "./js/validators.js";
@@ -177,12 +177,58 @@ function buildResultItem({ label, originalName, finalName, message, file }) {
   return item;
 }
 
+async function ajustarFoto3x4SeNecessario(doc, file) {
+  if (doc.id !== "foto_3x4" || !file || !file.type.startsWith("image/")) {
+    return { file, adjusted: false };
+  }
+
+  try {
+    const needsAdjustment = await processarFoto3x4(file);
+    if (!needsAdjustment) {
+      return { file, adjusted: false };
+    }
+
+    const confirmed = window.confirm(
+      "Detectamos bordas brancas na foto 3x4. Deseja remover essas bordas antes de salvar?",
+    );
+
+    if (!confirmed) {
+      return { file, adjusted: false };
+    }
+
+    const croppedFile = await recortarFoto3x4Arquivo(file);
+
+    if (croppedFile !== file) {
+      if (doc.convertedFile) {
+        doc.convertedFile = croppedFile;
+      } else {
+        doc.file = croppedFile;
+      }
+      doc.status = "valid";
+      doc.renderStatus?.();
+      showToast({
+        title: "Bordas removidas",
+        message: "A foto 3x4 foi recortada e o arquivo ajustado para download.",
+        type: "success",
+      });
+    }
+
+    return { file: croppedFile, adjusted: croppedFile !== file };
+  } catch (error) {
+    console.warn("Falha ao verificar ou recortar a foto 3x4:", error);
+    return { file, adjusted: false };
+  }
+}
+
 function createDocumentCards() {
   documentGrid.innerHTML = "";
 
   documents.forEach((doc) => {
     const card = document.createElement("div");
     card.className = "doc-card premium-doc-card";
+    if (doc.id === "foto_3x4") {
+      card.classList.add("photo-highlight");
+    }
     card.dataset.docId = doc.id;
     card.dataset.state = "empty";
 
@@ -263,6 +309,7 @@ function createDocumentCards() {
     function renderDocStatus() {
       const currentState = getDocState(doc.id);
       const meta = getStatusMeta(currentState);
+      doc.renderStatus = renderDocStatus;
 
       actionsArea.innerHTML = "";
       badge.textContent = meta.badge;
@@ -486,28 +533,38 @@ processBtn.addEventListener("click", async () => {
 
     const finalFiles = [];
 
-    selectedDocs.forEach((doc) => {
-      const finalFile = buildFinalFile(doc, studentName);
+    for (const doc of selectedDocs) {
+      let effectiveFile = doc.convertedFile || doc.file;
+      let adjusted = false;
 
-      if (!finalFile) return;
+      if (doc.id === "foto_3x4" && effectiveFile) {
+        const result = await ajustarFoto3x4SeNecessario(doc, effectiveFile);
+        effectiveFile = result.file;
+        adjusted = result.adjusted;
+      }
+
+      const finalFile = buildFinalFile({ ...doc, convertedFile: effectiveFile }, studentName);
+      if (!finalFile) continue;
 
       finalFiles.push(finalFile);
 
       let message = "Arquivo pronto para download.";
-      if (doc.status === "converted") {
+      if (adjusted) {
+        message = "Bordas brancas removidas e foto recortada com sucesso.";
+      } else if (doc.status === "converted") {
         message = `Arquivo convertido com sucesso para ${doc.validation.targetExtension.toUpperCase()}.`;
       }
 
       const item = buildResultItem({
         label: doc.label,
-        originalName: (doc.convertedFile || doc.file).name,
+        originalName: effectiveFile.name,
         finalName: finalFile.name,
         message,
         file: finalFile,
       });
 
       resultList.appendChild(item);
-    });
+    }
 
     if (!finalFiles.length) {
       resultList.innerHTML =
